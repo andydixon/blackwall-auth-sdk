@@ -22,7 +22,7 @@ This package provides:
 If this repository is published and tagged:
 
 ```bash
-composer require dixon/blackwall-auth-sdk
+composer require andydixon/blackwall-auth-sdk
 ```
 
 ### 2. Install from local path (during development)
