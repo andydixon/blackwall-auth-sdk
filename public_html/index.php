@@ -19,9 +19,9 @@ use BlackWallSDK\BlackWallAuth;
 
 $auth = new BlackWallAuth([
     'clientId' => '94d228c4-d4c6-4479-9b02-793e6a73e3f2',
-    'authorizeUrl' => 'https://blackwall.dixon.cx/oauth/authorize',
-    'tokenUrl' => 'https://blackwall.dixon.cx/oauth/token',
-    'userInfoUrl' => 'https://blackwall.dixon.cx/oauth/userinfo',
+    'authorizeUrl' => 'https://blackwall.cx/oauth/authorize',
+    'tokenUrl' => 'https://blackwall.cx/oauth/token',
+    'userInfoUrl' => 'https://blackwall.cx/oauth/userinfo',
     'redirectUri' => 'https://test.dixon.cx/callback.php',
     'scope' => 'openid profile email offline_access',
 ]);

@@ -17,9 +17,9 @@ use BlackWall\Auth\Config;
 
 $client = new AuthClient(Config::fromArray([
     'clientId' => 'your-client-id',
-    'authorizeUrl' => 'https://blackwall.dixon.cx/oauth/authorize',
-    'tokenUrl' => 'https://blackwall.dixon.cx/oauth/token',
-    'userInfoUrl' => 'https://blackwall.dixon.cx/oauth/userinfo',
+    'authorizeUrl' => 'https://blackwall.cx/oauth/authorize',
+    'tokenUrl' => 'https://blackwall.cx/oauth/token',
+    'userInfoUrl' => 'https://blackwall.cx/oauth/userinfo',
     'redirectUri' => 'https://your-app.example/callback.php',
     'scope' => 'openid profile email offline_access',
 ]));
@@ -48,9 +48,9 @@ use BlackWall\Auth\Config;
 
 $client = new AuthClient(Config::fromArray([
     'clientId' => 'your-client-id',
-    'authorizeUrl' => 'https://blackwall.dixon.cx/oauth/authorize',
-    'tokenUrl' => 'https://blackwall.dixon.cx/oauth/token',
-    'userInfoUrl' => 'https://blackwall.dixon.cx/oauth/userinfo',
+    'authorizeUrl' => 'https://blackwall.cx/oauth/authorize',
+    'tokenUrl' => 'https://blackwall.cx/oauth/token',
+    'userInfoUrl' => 'https://blackwall.cx/oauth/userinfo',
     'redirectUri' => 'https://your-app.example/callback.php',
 ]));
 
