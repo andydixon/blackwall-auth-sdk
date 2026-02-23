@@ -46,7 +46,7 @@ In the consuming application's `composer.json`:
 Then run:
 
 ```bash
-composer update dixon/blackwall-auth-sdk
+composer update andydixon/blackwall-auth-sdk
 ```
 
 ## Quick start
