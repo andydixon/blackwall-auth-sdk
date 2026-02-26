@@ -151,6 +151,7 @@ Provider user/project assignment views may exclude disabled projects even if his
 - For token exchange and refresh, apply bounded retry/backoff on transient provider failures instead of immediate repeated retries.
 - Use exactly one client authentication method per token/control request (do not send both HTTP Basic and `client_secret` form fields together).
 - If you call provider WebAuthn login challenge/verify endpoints directly, use `POST` only.
+- Treat admin enrollment URL export as a state-changing operation: call it with `POST` and include a valid CSRF token.
 - Configure OAuth client redirect URIs as HTTPS in production; reserve HTTP for localhost loopback testing only.
 - Assume provider rate limits are enforced per source identity (for example IP) and shared across related auth endpoints.
 - Treat report/export-style provider endpoints as high-cost and expect stricter rate limits.
