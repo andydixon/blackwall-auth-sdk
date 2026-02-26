@@ -145,6 +145,7 @@ try {
 - For token exchange and refresh, apply bounded retry/backoff on transient provider failures instead of immediate repeated retries.
 - If you call provider WebAuthn login challenge/verify endpoints directly, use `POST` only.
 - Configure OAuth client redirect URIs as HTTPS in production; reserve HTTP for localhost loopback testing only.
+- Assume provider rate limits are enforced per source identity (for example IP) and shared across related auth endpoints.
 - Rotate client secrets for confidential clients.
 - Add a unique `nonce` to each OIDC authorisation request.
 - Validate `state` on every callback request.
