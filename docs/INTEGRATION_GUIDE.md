@@ -136,6 +136,7 @@ try {
 
 `UserInfoException` with `invalid_token` can occur when provider-side subject scope is no longer active (for example user/project disabled) between token issuance and userinfo retrieval.
 `TokenExchangeException` with `invalid_grant` can also occur when provider-side client/user/project state is inactive at exchange time.
+Provider login/authorization steps can also fail with `access_denied` when account status is disabled before completion.
 
 ## Operational guidance
 
