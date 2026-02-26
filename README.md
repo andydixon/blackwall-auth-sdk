@@ -127,6 +127,8 @@ This wrapper now delegates to `BlackWall\Auth\AuthClient`.
 - Store refresh tokens securely.
 - Keep access tokens out of logs and browser-visible output.
 - Use short session lifetimes where possible.
+- `Config::fromArray()` enforces HTTPS URLs by default.
+- For localhost-only development over HTTP, set `allowInsecureHttp => true`.
 
 ## Repository layout
 

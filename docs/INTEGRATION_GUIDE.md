@@ -124,3 +124,5 @@ try {
 - Rotate client secrets for confidential clients.
 - Validate `state` on every callback request.
 - Use secure session cookies (`Secure`, `HttpOnly`, `SameSite=Lax` or stricter).
+- HTTPS URLs are enforced by default in `Config::fromArray()`.
+- For localhost-only HTTP testing, explicitly set `allowInsecureHttp => true`.
