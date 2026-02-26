@@ -25,7 +25,15 @@ $client = new AuthClient(Config::fromArray([
 ]));
 
 if (!isset($_SESSION['user'])) {
-    $auth = $client->buildAuthorisationUrl();
+    $auth = $client->buildAuthorisationUrl([
+        'extra' => [
+            // Some providers require nonce for OIDC requests.
+            'nonce' => rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '='),
+        ],
+    ]);
+    // Prevent stale redirects from being reused from cache.
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
     header('Location: ' . $auth['url']);
     exit;
 }
@@ -53,6 +61,12 @@ $client = new AuthClient(Config::fromArray([
     'userInfoUrl' => 'https://blackwall.cx/oauth/userinfo',
     'redirectUri' => 'https://your-app.example/callback.php',
 ]));
+
+if (isset($_GET['error'])) {
+    $description = isset($_GET['error_description']) ? (string) $_GET['error_description'] : 'Unknown provider error';
+    http_response_code(400);
+    exit('Authorization failed: ' . $description);
+}
 
 $result = $client->handleCallback($_GET);
 
@@ -122,6 +136,7 @@ try {
 - Keep provider URLs in environment variables, not hard-coded.
 - Avoid printing tokens in production pages.
 - Rotate client secrets for confidential clients.
+- Add a unique `nonce` to each OIDC authorisation request.
 - Validate `state` on every callback request.
 - Use secure session cookies (`Secure`, `HttpOnly`, `SameSite=Lax` or stricter).
 - HTTPS URLs are enforced by default in `Config::fromArray()`.

@@ -77,7 +77,12 @@ $config = Config::fromArray([
 $client = new AuthClient($config);
 
 // Step 1: redirect user to provider
-$auth = $client->buildAuthorisationUrl();
+$auth = $client->buildAuthorisationUrl([
+    'extra' => [
+        // Some providers require nonce for OIDC requests.
+        'nonce' => rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '='),
+    ],
+]);
 header('Location: ' . $auth['url']);
 exit;
 ```
@@ -123,6 +128,7 @@ This wrapper now delegates to `BlackWall\Auth\AuthClient`.
 ## Security notes
 
 - Always validate OAuth `state` in callback handlers.
+- For OIDC providers, include a per-request `nonce` in authorisation requests.
 - Always use HTTPS in production.
 - Store refresh tokens securely.
 - Keep access tokens out of logs and browser-visible output.
