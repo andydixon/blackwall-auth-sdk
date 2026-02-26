@@ -134,6 +134,8 @@ try {
 }
 ```
 
+`UserInfoException` with `invalid_token` can occur when provider-side subject scope is no longer active (for example user/project disabled) between token issuance and userinfo retrieval.
+
 ## Operational guidance
 
 - Keep provider URLs in environment variables, not hard-coded.

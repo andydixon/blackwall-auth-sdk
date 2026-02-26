@@ -16,6 +16,7 @@ foreach ($autoloadCandidates as $file) {
 }
 
 use BlackWallSDK\BlackWallAuth;
+use BlackWall\Auth\Exception\UserInfoException;
 
 $auth = new BlackWallAuth([
     'clientId' => '94d228c4-d4c6-4479-9b02-793e6a73e3f2',
@@ -42,6 +43,9 @@ try {
 
     header('Location: /');
     exit;
+} catch (UserInfoException $e) {
+    http_response_code(403);
+    echo 'User info access failed: ' . htmlspecialchars($e->getMessage(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 } catch (Throwable $e) {
     http_response_code(500);
     echo 'Auth failed: ' . htmlspecialchars($e->getMessage(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
