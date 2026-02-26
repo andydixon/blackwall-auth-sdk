@@ -152,6 +152,7 @@ Provider login/authorization steps can also fail with `access_denied` when accou
 - Rotate client secrets for confidential clients.
 - Do not transport secrets or tokens in URL query parameters; keep them in server-side session or secure storage only.
 - Add a unique `nonce` to each OIDC authorisation request.
+- Keep `state`, `nonce`, and PKCE values within standard URL-safe formats/lengths; malformed values can be rejected by provider validation.
 - Validate `state` on every callback request.
 - Use secure session cookies (`Secure`, `HttpOnly`, `SameSite=Lax` or stricter).
 - HTTPS URLs are enforced by default in `Config::fromArray()`.
