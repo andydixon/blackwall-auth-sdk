@@ -162,3 +162,4 @@ Provider user/project assignment views may exclude disabled projects even if his
 - Use secure session cookies (`Secure`, `HttpOnly`, `SameSite=Lax` or stricter).
 - HTTPS URLs are enforced by default in `Config::fromArray()`.
 - For localhost-only HTTP testing, explicitly set `allowInsecureHttp => true`.
+- If you call Cryptbin unwrap APIs directly, include the original share key as `key_b64url`; unwrap now returns `403 Forbidden` when key proof does not match metadata verifier.

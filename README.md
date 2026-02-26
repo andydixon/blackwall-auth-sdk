@@ -134,6 +134,7 @@ This wrapper now delegates to `BlackWall\Auth\AuthClient`.
 - Use OAuth/portal authentication endpoints for end users; provider admin login endpoints enforce separate admin scope checks.
 - Never place client secrets, refresh tokens, or access tokens in URL query strings.
 - For OIDC providers, include a per-request `nonce` in authorisation requests.
+- For direct Cryptbin API usage, send `key_b64url` on unwrap calls; provider rejects key-mismatch unwrap attempts with `403 Forbidden`.
 - Always use HTTPS in production.
 - Store refresh tokens securely.
 - Keep access tokens out of logs and browser-visible output.
