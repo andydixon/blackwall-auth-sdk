@@ -139,6 +139,7 @@ try {
 Provider login/authorization steps can also fail with `access_denied` when account status is disabled before completion.
 WebAuthn-based login verification can return credential-style failures for disabled accounts even when authenticator assertions are otherwise valid.
 Existing authenticated sessions may also be invalidated when account status changes to disabled.
+OAuth authorization consent submission can return `access_denied` if the account becomes inactive between session establishment and consent completion.
 
 ## Operational guidance
 
