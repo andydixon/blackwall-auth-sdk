@@ -130,6 +130,7 @@ This wrapper now delegates to `BlackWall\Auth\AuthClient`.
 - Always validate OAuth `state` in callback handlers.
 - Handle provider callback errors (`error`, `error_description`) explicitly; treat `access_denied` as an expected user/authorisation outcome rather than a transport failure.
 - Expect `access_denied` even after the consent page is displayed if provider-side project membership or tenant scope changes before consent submission.
+- Expect provider token introspection to return `active=false` when user/project/client state is no longer active.
 - Register only HTTPS redirect URIs in provider client settings (HTTP should be used only for localhost loopback during development).
 - Use OAuth/portal authentication endpoints for end users; provider admin login endpoints enforce separate admin scope checks.
 - For provider admin enrollment URL export operations, use `POST` with CSRF protection; do not automate them via unauthenticated `GET` links.
