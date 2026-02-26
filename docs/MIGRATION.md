@@ -26,6 +26,7 @@ $user = $client->getUserInfo($tokens->accessToken);
 ## Key differences
 
 - Method spelling uses British English in the new API: `buildAuthorisationUrl()`.
+- The legacy method name `getAuthorizationUrl()` is unchanged for backwards compatibility.
 - Token responses are strongly typed via `TokenSet`.
 - Errors are represented by specific exception classes.
 - HTTP transport is swappable via `HttpClientInterface`.

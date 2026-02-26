@@ -40,7 +40,7 @@ In the consuming application's `composer.json`:
     }
   ],
   "require": {
-    "dixon/blackwall-auth-sdk": "*"
+    "andydixon/blackwall-auth-sdk": "*"
   }
 }
 ```

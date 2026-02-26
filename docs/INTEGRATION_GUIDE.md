@@ -69,7 +69,7 @@ if (isset($_GET['error'])) {
     // revoked, privilege changed, or user denied consent between request and submit).
     // invalid_scope usually means the app requested scopes not enabled on the provider client.
     http_response_code(in_array($error, ['access_denied', 'invalid_scope'], true) ? 403 : 400);
-    exit('Authorization failed: ' . $description);
+    exit('Authorisation failed: ' . $description);
 }
 
 $result = $client->handleCallback($_GET);
@@ -140,11 +140,11 @@ try {
 Token introspection can return `active=false` when the token subject (user/project) or client has since been disabled.
 Provider JWT access tokens are now revocation-aware at `userinfo`; revoked JWTs can fail before natural expiry.
 Refresh-token exchange can return `invalid_grant` when provider client scope policy has been tightened and stored refresh scopes are no longer allowed.
-Provider login/authorization steps can also fail with `access_denied` when account status is disabled before completion.
+Provider login/authorisation steps can also fail with `access_denied` when account status is disabled before completion.
 WebAuthn-based login verification can return credential-style failures for disabled accounts even when authenticator assertions are otherwise valid.
 Existing authenticated sessions may also be invalidated when account status changes to disabled.
-OAuth authorization consent submission can return `access_denied` if the account becomes inactive between session establishment and consent completion.
-OAuth authorization can also return `invalid_scope` if requested scopes are not explicitly allowed on the provider client configuration.
+OAuth authorisation consent submission can return `access_denied` if the account becomes inactive between session establishment and consent completion.
+OAuth authorisation can also return `invalid_scope` if requested scopes are not explicitly allowed on the provider client configuration.
 Provider user/project assignment views may exclude disabled projects even if historical assignments exist.
 
 ## Operational guidance
@@ -156,13 +156,13 @@ Provider user/project assignment views may exclude disabled projects even if his
 - For token exchange and refresh, apply bounded retry/backoff on transient provider failures instead of immediate repeated retries.
 - Use exactly one client authentication method per token/control request (do not send both HTTP Basic and `client_secret` form fields together).
 - If you call provider WebAuthn login challenge/verify endpoints directly, use `POST` only.
-- Treat admin enrollment URL export as a state-changing operation: call it with `POST` and include a valid CSRF token.
+- Treat admin enrolment URL export as a state-changing operation: call it with `POST` and include a valid CSRF token.
 - Treat provider CSV exports as untrusted input in spreadsheet tools; prefer importing into systems that neutralise formula cells.
-- Treat enrollment URLs as sensitive bearer material: do not place them in redirect query parameters, logs, or analytics tags; keep them in one-time server-side flash/session state.
+- Treat enrolment URLs as sensitive bearer material: do not place them in redirect query parameters, logs, or analytics tags; keep them in one-time server-side flash/session state.
 - If your deployment runs behind reverse proxies, ensure trusted-proxy configuration is strict so spoofed forwarding headers cannot bypass IP-based abuse controls.
 - Trusted proxy allowlists may be expressed as explicit IPs or CIDR ranges; avoid broad ranges and keep proxy chains minimal.
-- For approval-driven admin mutations, assume provider-side execution is serialized per approval item; client retries should still be idempotent and bounded.
-- This serialization applies across approval actions (approve/reject/cancel), so clients should avoid parallel decision submissions for the same request ID.
+- For approval-driven admin mutations, assume provider-side execution is serialised per approval item; client retries should still be idempotent and bounded.
+- This serialisation applies across approval actions (approve/reject/cancel), so clients should avoid parallel decision submissions for the same request ID.
 - For provider CSV-based user import operations, enforce strict file-size and row-count limits in automation tooling and surface clear operator errors on limit breaches.
 - Configure OAuth client redirect URIs as HTTPS in production; reserve HTTP for localhost loopback testing only.
 - Assume provider rate limits are enforced per source identity (for example IP) and shared across related auth endpoints.

@@ -23,5 +23,5 @@ This document summarises provider-side security guarantees that SDK integrators 
 - Keep requested scopes minimal and aligned to the provider client configuration.
 - Treat `access_denied`, `invalid_scope`, and `invalid_grant` as expected security outcomes, not transport errors.
 - Build retries only for transient failures; do not blindly retry authz/authn denials.
-- Keep enrollment URLs/tokens and OAuth tokens out of URLs, logs, and analytics tags.
+- Keep enrolment URLs/tokens and OAuth tokens out of URLs, logs, and analytics tags.
 - Use strict HTTPS and secure session-cookie handling in the relying party app.
