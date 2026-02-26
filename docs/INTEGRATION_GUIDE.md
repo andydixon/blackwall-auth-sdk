@@ -140,6 +140,7 @@ try {
 - Avoid printing tokens in production pages.
 - Expect `429 Too Many Requests` from provider control endpoints under abuse protection; implement backoff/retry instead of tight loops.
 - Apply the same backoff strategy for provider `userinfo` calls that return `429 Too Many Requests`.
+- For token exchange and refresh, apply bounded retry/backoff on transient provider failures instead of immediate repeated retries.
 - If you call provider WebAuthn login challenge/verify endpoints directly, use `POST` only.
 - Configure OAuth client redirect URIs as HTTPS in production; reserve HTTP for localhost loopback testing only.
 - Rotate client secrets for confidential clients.
