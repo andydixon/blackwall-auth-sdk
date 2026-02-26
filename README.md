@@ -145,6 +145,7 @@ This wrapper now delegates to `BlackWall\Auth\AuthClient`.
 - Never place client secrets, refresh tokens, or access tokens in URL query strings.
 - For OIDC providers, include a per-request `nonce` in authorisation requests.
 - For direct Cryptbin API usage, send `key_b64url` on unwrap calls; provider rejects key-mismatch unwrap attempts with `403 Forbidden`.
+- For newly created Cryptbin items, continue using the creating WebAuthn credential for unwrap/update/delete flows.
 - Always use HTTPS in production.
 - Store refresh tokens securely.
 - Keep access tokens out of logs and browser-visible output.

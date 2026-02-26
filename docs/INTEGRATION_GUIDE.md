@@ -173,3 +173,4 @@ Provider user/project assignment views may exclude disabled projects even if his
 - HTTPS URLs are enforced by default in `Config::fromArray()`.
 - For localhost-only HTTP testing, explicitly set `allowInsecureHttp => true`.
 - If you call Cryptbin unwrap APIs directly, include the original share key as `key_b64url`; unwrap now returns `403 Forbidden` when key proof does not match metadata verifier.
+- New Cryptbin items may also bind unwrap/update/delete operations to the creating WebAuthn credential; use the same authenticator for follow-up operations.
