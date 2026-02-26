@@ -60,7 +60,7 @@ final class AuthClient
     {
         $sessionState = $_SESSION['blackwall_oauth_state'] ?? null;
         if (!is_string($sessionState) || $state !== $sessionState) {
-            throw new StateMismatchException('The OAuth state did not match the session value');
+            throw new StateMismatchException('The OAuth state did not match the session value', 'state_mismatch');
         }
     }
 
@@ -68,7 +68,7 @@ final class AuthClient
     {
         $verifier = $codeVerifier ?? ($_SESSION['blackwall_oauth_code_verifier'] ?? null);
         if (!is_string($verifier) || $verifier === '') {
-            throw new TokenExchangeException('Missing code verifier; pass one explicitly or persist it in session.');
+            throw new TokenExchangeException('Missing code verifier; pass one explicitly or persist it in session.', 'missing_code_verifier');
         }
 
         $payload = [
@@ -88,11 +88,11 @@ final class AuthClient
 
         if ($result['status'] >= 400) {
             $message = is_array($data) ? json_encode($data) : $result['body'];
-            throw new TokenExchangeException('Token endpoint error (' . $result['status'] . '): ' . $message);
+            throw new TokenExchangeException('Token endpoint error (' . $result['status'] . '): ' . $message, 'token_exchange_failed');
         }
 
         if (!is_array($data)) {
-            throw new TokenExchangeException('Token endpoint returned invalid JSON');
+            throw new TokenExchangeException('Token endpoint returned invalid JSON', 'token_response_invalid_json');
         }
 
         return TokenSet::fromArray($data);
@@ -115,11 +115,11 @@ final class AuthClient
 
         if ($result['status'] >= 400) {
             $message = is_array($data) ? json_encode($data) : $result['body'];
-            throw new TokenExchangeException('Refresh token error (' . $result['status'] . '): ' . $message);
+            throw new TokenExchangeException('Refresh token error (' . $result['status'] . '): ' . $message, 'refresh_exchange_failed');
         }
 
         if (!is_array($data)) {
-            throw new TokenExchangeException('Refresh token response was not valid JSON');
+            throw new TokenExchangeException('Refresh token response was not valid JSON', 'refresh_response_invalid_json');
         }
 
         return TokenSet::fromArray($data);
@@ -131,7 +131,7 @@ final class AuthClient
     public function getUserInfo(string $accessToken): array
     {
         if ($this->config->userInfoUrl === null || $this->config->userInfoUrl === '') {
-            throw new UserInfoException('UserInfo URL has not been configured');
+            throw new UserInfoException('UserInfo URL has not been configured', 'userinfo_url_missing');
         }
 
         $result = $this->httpClient->get($this->config->userInfoUrl, [
@@ -141,14 +141,56 @@ final class AuthClient
         $data = json_decode($result['body'], true);
         if ($result['status'] >= 400) {
             $message = is_array($data) ? json_encode($data) : $result['body'];
-            throw new UserInfoException('UserInfo endpoint error (' . $result['status'] . '): ' . $message);
+            throw new UserInfoException('UserInfo endpoint error (' . $result['status'] . '): ' . $message, 'userinfo_request_failed');
         }
 
         if (!is_array($data)) {
-            throw new UserInfoException('UserInfo response was not valid JSON');
+            throw new UserInfoException('UserInfo response was not valid JSON', 'userinfo_invalid_json');
         }
 
         return $data;
+    }
+
+    public function getNormalizedUserInfo(string $accessToken): UserInfo
+    {
+        return UserInfoNormalizer::normalize($this->getUserInfo($accessToken));
+    }
+
+    /**
+     * @param array<string, mixed> $query
+     */
+    public function handleCallback(array $query, bool $clearPkce = true): CallbackResult
+    {
+        if (!isset($query['code'], $query['state'])) {
+            throw new UserInfoException('Missing code/state', 'missing_callback_params');
+        }
+
+        $this->assertStateMatches((string) $query['state']);
+        $tokens = $this->exchangeCodeForTokens((string) $query['code']);
+        $rawUser = $this->getUserInfo($tokens->accessToken);
+        $user = UserInfoNormalizer::normalize($rawUser);
+
+        if ($clearPkce) {
+            $this->clearPkceSessionState();
+        }
+
+        return new CallbackResult($tokens, $user, $rawUser);
+    }
+
+    /**
+     * @param array<string, mixed> $userInfo
+     */
+    public static function resolvePrivilegeLevel(array $userInfo): ?int
+    {
+        return UserInfoNormalizer::resolvePrivilegeLevel($userInfo);
+    }
+
+    /**
+     * @param array<string, mixed> $userInfo
+     */
+    public static function resolveRole(array $userInfo): ?string
+    {
+        return UserInfoNormalizer::resolveRole($userInfo);
     }
 
     public function exchangeCodeAndFetchUser(string $code, ?string $codeVerifier = null): AuthResult

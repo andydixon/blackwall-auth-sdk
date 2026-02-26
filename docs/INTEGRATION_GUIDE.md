@@ -54,27 +54,37 @@ $client = new AuthClient(Config::fromArray([
     'redirectUri' => 'https://your-app.example/callback.php',
 ]));
 
-if (!isset($_GET['code'], $_GET['state'])) {
-    http_response_code(400);
-    echo 'Missing code/state';
-    exit;
-}
+$result = $client->handleCallback($_GET);
 
-$client->assertStateMatches((string) $_GET['state']);
-$tokens = $client->exchangeCodeForTokens((string) $_GET['code']);
-$user = $client->getUserInfo($tokens->accessToken);
-
-$_SESSION['user'] = $user;
-$_SESSION['access_token'] = $tokens->accessToken;
-$_SESSION['refresh_token'] = $tokens->refreshToken;
-
-$client->clearPkceSessionState();
+$_SESSION['user'] = [
+    'email' => $result->user->email,
+    'privilege_level' => $result->user->privilegeLevel,
+    'role' => $result->user->role,
+];
+$_SESSION['access_token'] = $result->tokens->accessToken;
+$_SESSION['refresh_token'] = $result->tokens->refreshToken;
 
 header('Location: /');
 exit;
 ```
 
-## 3. Refresh token (optional)
+## 3. Single callback for multiple app roles
+
+Using one OAuth client and one callback URL is recommended.
+
+Map users in your application by:
+
+1. `email` claim to local account record
+2. `privilege_level` (or `role`) to application role
+
+Typical mapping example:
+
+- `privilege_level = 1` => admin/superadmin
+- `privilege_level = 2` => user/tutor
+
+If `privilege_level` is absent, the SDK also resolves common role strings (`admin`, `superadmin`, `user`, `tutor`).
+
+## 4. Refresh token (optional)
 
 ```php
 <?php
@@ -102,6 +112,7 @@ try {
     $tokens = $client->exchangeCodeForTokens($code);
 } catch (\BlackWall\Auth\Exception\TokenExchangeException $e) {
     error_log('Token exchange failed: ' . $e->getMessage());
+    error_log('Auth code: ' . ($e->authCode() ?? 'none'));
     http_response_code(502);
 }
 ```

@@ -25,28 +25,11 @@ $auth = new BlackWallAuth([
     'redirectUri' => 'https://test.dixon.cx/callback.php',
 ]);
 
-if (!isset($_GET['code'], $_GET['state'])) {
-    http_response_code(400);
-    echo 'Missing code/state';
-    exit;
-}
-
-if (isset($_SESSION['blackwall_oauth_state']) && $_GET['state'] !== $_SESSION['blackwall_oauth_state']) {
-    http_response_code(400);
-    echo 'Invalid state';
-    exit;
-}
-
 try {
-    $tokens = $auth->exchangeCodeForTokens($_GET['code']);
-    $_SESSION['access_token'] = $tokens['access_token'] ?? null;
-    $_SESSION['refresh_token'] = $tokens['refresh_token'] ?? null;
-
-    if (isset($_SESSION['access_token']) && is_string($_SESSION['access_token'])) {
-        $_SESSION['user'] = $auth->getUserInfo($_SESSION['access_token']);
-    }
-
-    unset($_SESSION['blackwall_oauth_state'], $_SESSION['blackwall_oauth_code_verifier']);
+    $result = $auth->handleCallback($_GET);
+    $_SESSION['access_token'] = $result['tokens']['access_token'] ?? null;
+    $_SESSION['refresh_token'] = $result['tokens']['refresh_token'] ?? null;
+    $_SESSION['user'] = $result['raw_user'] ?? null;
 
     header('Location: /');
     exit;

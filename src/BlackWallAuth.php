@@ -56,4 +56,41 @@ class BlackWallAuth
     {
         return $this->client->getUserInfo($accessToken);
     }
+
+    /**
+     * @return array{email:string,privilege_level:?int,role:?string,raw:array<string,mixed>}
+     */
+    public function getNormalizedUserInfo(string $accessToken): array
+    {
+        $normalized = $this->client->getNormalizedUserInfo($accessToken);
+        return [
+            'email' => $normalized->email,
+            'privilege_level' => $normalized->privilegeLevel,
+            'role' => $normalized->role,
+            'raw' => $normalized->raw,
+        ];
+    }
+
+    /**
+     * @param array<string,mixed> $query
+     * @return array{
+     *   tokens: array<string,mixed>,
+     *   user: array{email:string,privilege_level:?int,role:?string,raw:array<string,mixed>},
+     *   raw_user: array<string,mixed>
+     * }
+     */
+    public function handleCallback(array $query, bool $clearPkce = true): array
+    {
+        $result = $this->client->handleCallback($query, $clearPkce);
+        return [
+            'tokens' => $result->tokens->raw,
+            'user' => [
+                'email' => $result->user->email,
+                'privilege_level' => $result->user->privilegeLevel,
+                'role' => $result->user->role,
+                'raw' => $result->user->raw,
+            ],
+            'raw_user' => $result->rawUser,
+        ];
+    }
 }

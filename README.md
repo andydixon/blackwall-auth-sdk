@@ -7,6 +7,8 @@ This package provides:
 - Code-for-token exchange
 - Refresh token exchange
 - UserInfo retrieval
+- UserInfo normalisation (`email`, `privilege_level`, `role`)
+- Unified callback handling helper (`handleCallback`)
 - Session helpers for `state` and `code_verifier`
 - Typed API (`AuthClient`, `TokenSet`) and specific exception classes
 
@@ -82,6 +84,19 @@ exit;
 
 For callback handling, see `docs/INTEGRATION_GUIDE.md`.
 
+Minimal callback example:
+
+```php
+$result = $client->handleCallback($_GET);
+
+$_SESSION['user'] = [
+    'email' => $result->user->email,
+    'privilege_level' => $result->user->privilegeLevel,
+    'role' => $result->user->role,
+];
+$_SESSION['access_token'] = $result->tokens->accessToken;
+```
+
 ## Backwards compatibility
 
 A wrapper class is retained for older integrations:
@@ -98,6 +113,9 @@ This wrapper now delegates to `BlackWall\Auth\AuthClient`.
 - `BlackWall\Auth\AuthClient`
 - `BlackWall\Auth\TokenSet`
 - `BlackWall\Auth\AuthResult`
+- `BlackWall\Auth\CallbackResult`
+- `BlackWall\Auth\UserInfo`
+- `BlackWall\Auth\UserInfoNormalizer`
 - `BlackWall\Auth\Http\HttpClientInterface`
 - `BlackWall\Auth\Http\CurlHttpClient`
 - `BlackWall\Auth\Exception\*`

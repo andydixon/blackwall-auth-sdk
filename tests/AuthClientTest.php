@@ -147,4 +147,64 @@ final class AuthClientTest extends TestCase
         $this->expectExceptionMessage('UserInfo endpoint error (401)');
         $this->client->getUserInfo('expired-token');
     }
+
+    public function testGetNormalizedUserInfoReturnsCanonicalFields(): void
+    {
+        $this->http->queueGet([
+            'status' => 200,
+            'body' => '{"email":"Admin@Example.com","claims":{"role":"admin"}}',
+        ]);
+
+        $user = $this->client->getNormalizedUserInfo('access-4');
+
+        self::assertSame('admin@example.com', $user->email);
+        self::assertSame(1, $user->privilegeLevel);
+        self::assertSame('admin', $user->role);
+    }
+
+    public function testResolvePrivilegeLevelSupportsAliases(): void
+    {
+        self::assertSame(1, AuthClient::resolvePrivilegeLevel(['privilege_level' => 1]));
+        self::assertSame(2, AuthClient::resolvePrivilegeLevel(['claims' => ['role_level' => '2']]));
+        self::assertSame(1, AuthClient::resolvePrivilegeLevel(['role' => 'superadmin']));
+        self::assertSame(2, AuthClient::resolvePrivilegeLevel(['role' => 'tutor']));
+        self::assertNull(AuthClient::resolvePrivilegeLevel(['foo' => 'bar']));
+    }
+
+    public function testHandleCallbackReturnsCallbackResult(): void
+    {
+        $_SESSION['blackwall_oauth_state'] = 'state-1';
+        $_SESSION['blackwall_oauth_code_verifier'] = 'verifier-123';
+
+        $this->http->queuePost([
+            'status' => 200,
+            'body' => json_encode([
+                'access_token' => 'access-1',
+                'refresh_token' => 'refresh-1',
+                'token_type' => 'Bearer',
+            ], JSON_THROW_ON_ERROR),
+        ]);
+
+        $this->http->queueGet([
+            'status' => 200,
+            'body' => '{"email":"tutor@example.com","privilege_level":2}',
+        ]);
+
+        $result = $this->client->handleCallback([
+            'code' => 'code-1',
+            'state' => 'state-1',
+        ]);
+
+        self::assertSame('access-1', $result->tokens->accessToken);
+        self::assertSame('tutor@example.com', $result->user->email);
+        self::assertSame(2, $result->user->privilegeLevel);
+        self::assertArrayNotHasKey('blackwall_oauth_state', $_SESSION);
+        self::assertArrayNotHasKey('blackwall_oauth_code_verifier', $_SESSION);
+    }
+
+    public function testHandleCallbackThrowsOnMissingParams(): void
+    {
+        $this->expectException(UserInfoException::class);
+        $this->client->handleCallback(['state' => 'only-state']);
+    }
 }
