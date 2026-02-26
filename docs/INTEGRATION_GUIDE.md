@@ -147,6 +147,7 @@ try {
 - Configure OAuth client redirect URIs as HTTPS in production; reserve HTTP for localhost loopback testing only.
 - Assume provider rate limits are enforced per source identity (for example IP) and shared across related auth endpoints.
 - Rotate client secrets for confidential clients.
+- Do not transport secrets or tokens in URL query parameters; keep them in server-side session or secure storage only.
 - Add a unique `nonce` to each OIDC authorisation request.
 - Validate `state` on every callback request.
 - Use secure session cookies (`Secure`, `HttpOnly`, `SameSite=Lax` or stricter).
