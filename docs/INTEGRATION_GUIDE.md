@@ -138,6 +138,7 @@ try {
 
 - Keep provider URLs in environment variables, not hard-coded.
 - Avoid printing tokens in production pages.
+- Expect `429 Too Many Requests` from provider control endpoints under abuse protection; implement backoff/retry instead of tight loops.
 - Rotate client secrets for confidential clients.
 - Add a unique `nonce` to each OIDC authorisation request.
 - Validate `state` on every callback request.
