@@ -153,6 +153,7 @@ Provider user/project assignment views may exclude disabled projects even if his
 - If you call provider WebAuthn login challenge/verify endpoints directly, use `POST` only.
 - Configure OAuth client redirect URIs as HTTPS in production; reserve HTTP for localhost loopback testing only.
 - Assume provider rate limits are enforced per source identity (for example IP) and shared across related auth endpoints.
+- Treat report/export-style provider endpoints as high-cost and expect stricter rate limits.
 - Rotate client secrets for confidential clients.
 - Do not transport secrets or tokens in URL query parameters; keep them in server-side session or secure storage only.
 - Add a unique `nonce` to each OIDC authorisation request.
