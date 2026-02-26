@@ -137,6 +137,7 @@ try {
 `UserInfoException` with `invalid_token` can occur when provider-side subject scope is no longer active (for example user/project disabled) between token issuance and userinfo retrieval.
 `TokenExchangeException` with `invalid_grant` can also occur when provider-side client/user/project state is inactive at exchange time.
 Token introspection can return `active=false` when the token subject (user/project) or client has since been disabled.
+Provider JWT access tokens are now revocation-aware at `userinfo`; revoked JWTs can fail before natural expiry.
 Provider login/authorization steps can also fail with `access_denied` when account status is disabled before completion.
 WebAuthn-based login verification can return credential-style failures for disabled accounts even when authenticator assertions are otherwise valid.
 Existing authenticated sessions may also be invalidated when account status changes to disabled.
