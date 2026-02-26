@@ -159,6 +159,7 @@ Provider user/project assignment views may exclude disabled projects even if his
 - If your deployment runs behind reverse proxies, ensure trusted-proxy configuration is strict so spoofed forwarding headers cannot bypass IP-based abuse controls.
 - For approval-driven admin mutations, assume provider-side execution is serialized per approval item; client retries should still be idempotent and bounded.
 - This serialization applies across approval actions (approve/reject/cancel), so clients should avoid parallel decision submissions for the same request ID.
+- For provider CSV-based user import operations, enforce strict file-size and row-count limits in automation tooling and surface clear operator errors on limit breaches.
 - Configure OAuth client redirect URIs as HTTPS in production; reserve HTTP for localhost loopback testing only.
 - Assume provider rate limits are enforced per source identity (for example IP) and shared across related auth endpoints.
 - Treat report/export-style provider endpoints as high-cost and expect stricter rate limits.
