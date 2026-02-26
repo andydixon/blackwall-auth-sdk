@@ -137,6 +137,7 @@ This wrapper now delegates to `BlackWall\Auth\AuthClient`.
 - Handle provider CSV exports with formula-injection safety in mind if opening them in spreadsheet applications.
 - Treat generated enrollment URLs as secrets and keep them out of URL query strings and request logs.
 - For reverse-proxy deployments, harden trusted proxy/IP forwarding configuration to prevent spoofed client IP headers.
+- Keep client-side admin mutation retries idempotent; approval workflows can be lock-serialized and should not be assumed to execute twice.
 - Never place client secrets, refresh tokens, or access tokens in URL query strings.
 - For OIDC providers, include a per-request `nonce` in authorisation requests.
 - For direct Cryptbin API usage, send `key_b64url` on unwrap calls; provider rejects key-mismatch unwrap attempts with `403 Forbidden`.
