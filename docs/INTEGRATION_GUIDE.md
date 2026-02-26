@@ -138,6 +138,7 @@ try {
 `TokenExchangeException` with `invalid_grant` can also occur when provider-side client/user/project state is inactive at exchange time.
 Provider login/authorization steps can also fail with `access_denied` when account status is disabled before completion.
 WebAuthn-based login verification can return credential-style failures for disabled accounts even when authenticator assertions are otherwise valid.
+Existing authenticated sessions may also be invalidated when account status changes to disabled.
 
 ## Operational guidance
 
