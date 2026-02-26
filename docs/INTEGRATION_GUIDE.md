@@ -63,8 +63,11 @@ $client = new AuthClient(Config::fromArray([
 ]));
 
 if (isset($_GET['error'])) {
+    $error = (string) $_GET['error'];
     $description = isset($_GET['error_description']) ? (string) $_GET['error_description'] : 'Unknown provider error';
-    http_response_code(400);
+    // access_denied is a normal authorisation outcome (for example, membership
+    // revoked or user denied consent between request and submit).
+    http_response_code($error === 'access_denied' ? 403 : 400);
     exit('Authorization failed: ' . $description);
 }
 

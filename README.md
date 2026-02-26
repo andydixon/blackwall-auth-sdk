@@ -128,6 +128,7 @@ This wrapper now delegates to `BlackWall\Auth\AuthClient`.
 ## Security notes
 
 - Always validate OAuth `state` in callback handlers.
+- Handle provider callback errors (`error`, `error_description`) explicitly; treat `access_denied` as an expected user/authorisation outcome rather than a transport failure.
 - For OIDC providers, include a per-request `nonce` in authorisation requests.
 - Always use HTTPS in production.
 - Store refresh tokens securely.

@@ -25,6 +25,15 @@ $auth = new BlackWallAuth([
     'redirectUri' => 'https://test.dixon.cx/callback.php',
 ]);
 
+if (isset($_GET['error'])) {
+    $error = (string) $_GET['error'];
+    $description = isset($_GET['error_description']) ? (string) $_GET['error_description'] : 'Authorisation was denied.';
+    $status = $error === 'access_denied' ? 403 : 400;
+    http_response_code($status);
+    echo 'Authorisation failed: ' . htmlspecialchars($description, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    exit;
+}
+
 try {
     $result = $auth->handleCallback($_GET);
     $_SESSION['access_token'] = $result['tokens']['access_token'] ?? null;
