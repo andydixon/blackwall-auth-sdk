@@ -133,6 +133,7 @@ This wrapper now delegates to `BlackWall\Auth\AuthClient`.
 - Register only HTTPS redirect URIs in provider client settings (HTTP should be used only for localhost loopback during development).
 - Use OAuth/portal authentication endpoints for end users; provider admin login endpoints enforce separate admin scope checks.
 - For provider admin enrollment URL export operations, use `POST` with CSRF protection; do not automate them via unauthenticated `GET` links.
+- Handle provider CSV exports with formula-injection safety in mind if opening them in spreadsheet applications.
 - Never place client secrets, refresh tokens, or access tokens in URL query strings.
 - For OIDC providers, include a per-request `nonce` in authorisation requests.
 - For direct Cryptbin API usage, send `key_b64url` on unwrap calls; provider rejects key-mismatch unwrap attempts with `403 Forbidden`.
