@@ -143,6 +143,7 @@ try {
 - Expect `429 Too Many Requests` from provider control endpoints under abuse protection; implement backoff/retry instead of tight loops.
 - Apply the same backoff strategy for provider `userinfo` calls that return `429 Too Many Requests`.
 - For token exchange and refresh, apply bounded retry/backoff on transient provider failures instead of immediate repeated retries.
+- Use exactly one client authentication method per token/control request (do not send both HTTP Basic and `client_secret` form fields together).
 - If you call provider WebAuthn login challenge/verify endpoints directly, use `POST` only.
 - Configure OAuth client redirect URIs as HTTPS in production; reserve HTTP for localhost loopback testing only.
 - Assume provider rate limits are enforced per source identity (for example IP) and shared across related auth endpoints.
