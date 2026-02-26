@@ -129,6 +129,7 @@ This wrapper now delegates to `BlackWall\Auth\AuthClient`.
 
 - Always validate OAuth `state` in callback handlers.
 - Handle provider callback errors (`error`, `error_description`) explicitly; treat `access_denied` as an expected user/authorisation outcome rather than a transport failure.
+- Treat `invalid_scope` as a client-configuration mismatch: requested scopes must be a subset of scopes allowed on the provider client.
 - Expect `access_denied` even after the consent page is displayed if provider-side project membership or tenant scope changes before consent submission.
 - Expect provider token introspection to return `active=false` when user/project/client state is no longer active.
 - Expect revoked JWT access tokens to be rejected by provider `userinfo` even before token expiry.
@@ -144,6 +145,7 @@ This wrapper now delegates to `BlackWall\Auth\AuthClient`.
 - Apply bounded CSV import sizes and row counts for admin bulk-user operations.
 - Never place client secrets, refresh tokens, or access tokens in URL query strings.
 - For OIDC providers, include a per-request `nonce` in authorisation requests.
+- Ensure requested `scope` values in SDK config/examples (for example `offline_access`) are enabled on the provider-side client before rollout.
 - For direct Cryptbin API usage, send `key_b64url` on unwrap calls; provider rejects key-mismatch unwrap attempts with `403 Forbidden`.
 - For newly created Cryptbin items, continue using the creating WebAuthn credential for unwrap/update/delete flows.
 - Always use HTTPS in production.

@@ -67,7 +67,8 @@ if (isset($_GET['error'])) {
     $description = isset($_GET['error_description']) ? (string) $_GET['error_description'] : 'Unknown provider error';
     // access_denied is a normal authorisation outcome (for example, membership
     // revoked, privilege changed, or user denied consent between request and submit).
-    http_response_code($error === 'access_denied' ? 403 : 400);
+    // invalid_scope usually means the app requested scopes not enabled on the provider client.
+    http_response_code(in_array($error, ['access_denied', 'invalid_scope'], true) ? 403 : 400);
     exit('Authorization failed: ' . $description);
 }
 
@@ -142,6 +143,7 @@ Provider login/authorization steps can also fail with `access_denied` when accou
 WebAuthn-based login verification can return credential-style failures for disabled accounts even when authenticator assertions are otherwise valid.
 Existing authenticated sessions may also be invalidated when account status changes to disabled.
 OAuth authorization consent submission can return `access_denied` if the account becomes inactive between session establishment and consent completion.
+OAuth authorization can also return `invalid_scope` if requested scopes are not explicitly allowed on the provider client configuration.
 Provider user/project assignment views may exclude disabled projects even if historical assignments exist.
 
 ## Operational guidance
