@@ -88,6 +88,7 @@ exit;
 ```
 
 For callback handling, see `docs/INTEGRATION_GUIDE.md`.
+For provider-side threat/invariant assumptions, see `docs/SECURITY_MODEL.md`.
 
 Minimal callback example:
 
@@ -135,12 +136,12 @@ This wrapper now delegates to `BlackWall\Auth\AuthClient`.
 - Expect revoked JWT access tokens to be rejected by provider `userinfo` even before token expiry.
 - Register only HTTPS redirect URIs in provider client settings (HTTP should be used only for localhost loopback during development).
 - Use OAuth/portal authentication endpoints for end users; provider admin login endpoints enforce separate admin scope checks.
-- For provider admin enrollment URL export operations, use `POST` with CSRF protection; do not automate them via unauthenticated `GET` links.
+- For provider admin enrolment URL export operations, use `POST` with CSRF protection; do not automate them via unauthenticated `GET` links.
 - Handle provider CSV exports with formula-injection safety in mind if opening them in spreadsheet applications.
-- Treat generated enrollment URLs as secrets and keep them out of URL query strings and request logs.
+- Treat generated enrolment URLs as secrets and keep them out of URL query strings and request logs.
 - For reverse-proxy deployments, harden trusted proxy/IP forwarding configuration to prevent spoofed client IP headers.
 - Prefer narrowly scoped trusted-proxy entries (explicit IPs/CIDR ranges) instead of broad network trust.
-- Keep client-side admin mutation retries idempotent; approval workflows can be lock-serialized and should not be assumed to execute twice.
+- Keep client-side admin mutation retries idempotent; approval workflows can be lock-serialised and should not be assumed to execute twice.
 - Do not submit parallel approve/reject/cancel decisions for the same approval request ID.
 - Apply bounded CSV import sizes and row counts for admin bulk-user operations.
 - Never place client secrets, refresh tokens, or access tokens in URL query strings.
