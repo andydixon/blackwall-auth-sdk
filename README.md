@@ -138,6 +138,7 @@ This wrapper now delegates to `BlackWall\Auth\AuthClient`.
 - Handle provider CSV exports with formula-injection safety in mind if opening them in spreadsheet applications.
 - Treat generated enrollment URLs as secrets and keep them out of URL query strings and request logs.
 - For reverse-proxy deployments, harden trusted proxy/IP forwarding configuration to prevent spoofed client IP headers.
+- Prefer narrowly scoped trusted-proxy entries (explicit IPs/CIDR ranges) instead of broad network trust.
 - Keep client-side admin mutation retries idempotent; approval workflows can be lock-serialized and should not be assumed to execute twice.
 - Do not submit parallel approve/reject/cancel decisions for the same approval request ID.
 - Apply bounded CSV import sizes and row counts for admin bulk-user operations.
