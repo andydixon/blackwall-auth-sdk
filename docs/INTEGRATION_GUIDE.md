@@ -155,6 +155,7 @@ Provider user/project assignment views may exclude disabled projects even if his
 - Treat admin enrollment URL export as a state-changing operation: call it with `POST` and include a valid CSRF token.
 - Treat provider CSV exports as untrusted input in spreadsheet tools; prefer importing into systems that neutralise formula cells.
 - Treat enrollment URLs as sensitive bearer material: do not place them in redirect query parameters, logs, or analytics tags; keep them in one-time server-side flash/session state.
+- If your deployment runs behind reverse proxies, ensure trusted-proxy configuration is strict so spoofed forwarding headers cannot bypass IP-based abuse controls.
 - Configure OAuth client redirect URIs as HTTPS in production; reserve HTTP for localhost loopback testing only.
 - Assume provider rate limits are enforced per source identity (for example IP) and shared across related auth endpoints.
 - Treat report/export-style provider endpoints as high-cost and expect stricter rate limits.

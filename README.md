@@ -136,6 +136,7 @@ This wrapper now delegates to `BlackWall\Auth\AuthClient`.
 - For provider admin enrollment URL export operations, use `POST` with CSRF protection; do not automate them via unauthenticated `GET` links.
 - Handle provider CSV exports with formula-injection safety in mind if opening them in spreadsheet applications.
 - Treat generated enrollment URLs as secrets and keep them out of URL query strings and request logs.
+- For reverse-proxy deployments, harden trusted proxy/IP forwarding configuration to prevent spoofed client IP headers.
 - Never place client secrets, refresh tokens, or access tokens in URL query strings.
 - For OIDC providers, include a per-request `nonce` in authorisation requests.
 - For direct Cryptbin API usage, send `key_b64url` on unwrap calls; provider rejects key-mismatch unwrap attempts with `403 Forbidden`.
