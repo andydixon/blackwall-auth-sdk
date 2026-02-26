@@ -140,6 +140,7 @@ try {
 - Avoid printing tokens in production pages.
 - Expect `429 Too Many Requests` from provider control endpoints under abuse protection; implement backoff/retry instead of tight loops.
 - If you call provider WebAuthn login challenge/verify endpoints directly, use `POST` only.
+- Configure OAuth client redirect URIs as HTTPS in production; reserve HTTP for localhost loopback testing only.
 - Rotate client secrets for confidential clients.
 - Add a unique `nonce` to each OIDC authorisation request.
 - Validate `state` on every callback request.
