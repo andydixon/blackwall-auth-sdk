@@ -79,13 +79,15 @@ $client = new AuthClient($config);
 // Step 1: redirect user to provider
 $auth = $client->buildAuthorisationUrl([
     'extra' => [
-        // Some providers require nonce for OIDC requests.
+        // Include nonce in the authorisation request for OIDC.
         'nonce' => rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '='),
     ],
 ]);
 header('Location: ' . $auth['url']);
 exit;
 ```
+
+The generated authorisation request URL will include `nonce=...` alongside `state`, `scope`, and the PKCE parameters.
 
 For callback handling, see `docs/INTEGRATION_GUIDE.md`.
 For provider-side threat/invariant assumptions, see `docs/SECURITY_MODEL.md`.

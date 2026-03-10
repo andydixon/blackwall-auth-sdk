@@ -27,7 +27,7 @@ $client = new AuthClient(Config::fromArray([
 if (!isset($_SESSION['user'])) {
     $auth = $client->buildAuthorisationUrl([
         'extra' => [
-            // Some providers require nonce for OIDC requests.
+            // Include nonce in the authorisation request for OIDC.
             'nonce' => rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '='),
         ],
     ]);
@@ -40,6 +40,8 @@ if (!isset($_SESSION['user'])) {
 
 echo 'Already signed in.';
 ```
+
+The resulting redirect request includes `nonce=...` in the provider authorisation URL, together with `state`, `code_challenge`, and the rest of the OAuth/OIDC query parameters.
 
 ## 2. Handle callback
 

@@ -39,7 +39,11 @@ if (isset($_GET['logout'])) {
 }
 
 if (!isset($_SESSION['user'])) {
-    $authData = $auth->getAuthorizationUrl();
+    $authData = $auth->getAuthorizationUrl([
+        'extra' => [
+            'nonce' => rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '='),
+        ],
+    ]);
     header('Location: ' . $authData['url']);
     exit;
 }
