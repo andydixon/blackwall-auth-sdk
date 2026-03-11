@@ -25,12 +25,7 @@ $client = new AuthClient(Config::fromArray([
 ]));
 
 if (!isset($_SESSION['user'])) {
-    $auth = $client->buildAuthorisationUrl([
-        'extra' => [
-            // Include nonce in the authorisation request for OIDC.
-            'nonce' => rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '='),
-        ],
-    ]);
+    $auth = $client->buildAuthorisationUrl();
     // Prevent stale redirects from being reused from cache.
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     header('Pragma: no-cache');
@@ -41,7 +36,7 @@ if (!isset($_SESSION['user'])) {
 echo 'Already signed in.';
 ```
 
-The resulting redirect request includes `nonce=...` in the provider authorisation URL, together with `state`, `code_challenge`, and the rest of the OAuth/OIDC query parameters.
+When the requested scope contains `openid`, the SDK generates a secure nonce, persists it in `$_SESSION['blackwall_oidc_nonce']`, and includes `nonce=...` in the provider authorisation URL together with `state`, `code_challenge`, and the rest of the OAuth/OIDC query parameters.
 
 ## 2. Handle callback
 
@@ -74,7 +69,9 @@ if (isset($_GET['error'])) {
     exit('Authorisation failed: ' . $description);
 }
 
-$result = $client->handleCallback($_GET);
+$result = $client->handleCallback($_GET, true, [
+    'expected_nonce' => $_SESSION[\BlackWall\Auth\AuthClient::NONCE_SESSION_KEY] ?? null,
+]);
 
 $_SESSION['user'] = [
     'email' => $result->user->email,
@@ -87,6 +84,56 @@ $_SESSION['refresh_token'] = $result->tokens->refreshToken;
 header('Location: /');
 exit;
 ```
+
+If the provider returns an `id_token`, `handleCallback()` decodes the payload claims and checks the `nonce` claim against the expected value. If no `id_token` is returned, the callback continues normally. If the `nonce` claim is missing or mismatched, the SDK throws `BlackWall\Auth\Exception\NonceMismatchException`.
+
+## OIDC nonce handling
+
+Use `state` and `nonce` for different jobs:
+
+- `state` protects the front-channel redirect and callback correlation.
+- `nonce` protects the OpenID Connect authentication result carried by `id_token`.
+
+The SDK stores the following session keys when persistence is enabled:
+
+- `blackwall_oauth_state`
+- `blackwall_oauth_code_verifier`
+- `blackwall_oidc_nonce`
+
+If you need to supply your own nonce, pass it directly:
+
+```php
+$auth = $client->buildAuthorisationUrl([
+    'nonce' => 'your-application-generated-nonce',
+]);
+```
+
+You can validate an `id_token` nonce directly:
+
+```php
+$claims = $client->assertIdTokenNonceMatches(
+    $result->tokens->idToken,
+    $_SESSION[\BlackWall\Auth\AuthClient::NONCE_SESSION_KEY] ?? null
+);
+```
+
+You can also inspect JWT payload claims when debugging or doing application-level checks:
+
+```php
+$claims = $client->decodeJwtPayloadClaims($result->tokens->idToken);
+```
+
+This helper only decodes the JWT payload. It does not verify signature, issuer, audience, expiry, or token use. Full ID token verification may require JWK retrieval and additional OpenID Connect checks outside the current SDK scope.
+
+If a deployment cannot yet enforce nonce validation strictly, a temporary compatibility mode is available:
+
+```php
+$result = $client->handleCallback($_GET, true, [
+    'validate_nonce' => false,
+]);
+```
+
+Use this only as a short-term bridge while the application is updated to persist and enforce nonce consistently.
 
 ## 3. Single callback for multiple app roles
 
@@ -121,6 +168,7 @@ if ($tokens->refreshToken !== null) {
 Catch specific exceptions for clearer handling:
 
 - `BlackWall\Auth\Exception\StateMismatchException`
+- `BlackWall\Auth\Exception\NonceMismatchException`
 - `BlackWall\Auth\Exception\TokenExchangeException`
 - `BlackWall\Auth\Exception\UserInfoException`
 - `BlackWall\Auth\Exception\TransportException`
@@ -171,7 +219,7 @@ Provider user/project assignment views may exclude disabled projects even if his
 - Treat report/export-style provider endpoints as high-cost and expect stricter rate limits.
 - Rotate client secrets for confidential clients.
 - Do not transport secrets or tokens in URL query parameters; keep them in server-side session or secure storage only.
-- Add a unique `nonce` to each OIDC authorisation request.
+- Add a unique `nonce` to each OIDC authorisation request and validate it against the `id_token` when one is returned.
 - Keep `state`, `nonce`, and PKCE values within standard URL-safe formats/lengths; malformed values can be rejected by provider validation.
 - Validate `state` on every callback request.
 - Use secure session cookies (`Secure`, `HttpOnly`, `SameSite=Lax` or stricter).

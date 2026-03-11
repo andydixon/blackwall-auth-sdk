@@ -26,11 +26,34 @@ class BlackWallAuth
 
     /**
      * @param array<string, mixed> $opts
-     * @return array{url:string,state:string,code_verifier:string,code_challenge:string}
+     * @return array{url:string,state:string,code_verifier:string,code_challenge:string,nonce:?string}
      */
     public function getAuthorizationUrl(array $opts = []): array
     {
         return $this->client->buildAuthorisationUrl($opts);
+    }
+
+    public function assertNonceMatches(string $nonce): void
+    {
+        $this->client->assertNonceMatches($nonce);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function assertIdTokenNonceMatches(string $idToken, ?string $expectedNonce = null): array
+    {
+        return $this->client->assertIdTokenNonceMatches($idToken, $expectedNonce);
+    }
+
+    /**
+     * Decodes JWT payload claims only. This does not perform cryptographic verification.
+     *
+     * @return array<string, mixed>
+     */
+    public function decodeJwtPayloadClaims(string $jwt): array
+    {
+        return $this->client->decodeJwtPayloadClaims($jwt);
     }
 
     /**
@@ -73,15 +96,16 @@ class BlackWallAuth
 
     /**
      * @param array<string,mixed> $query
+     * @param array{expected_nonce?:?string,validate_nonce?:bool} $options
      * @return array{
      *   tokens: array<string,mixed>,
      *   user: array{email:string,privilege_level:?int,role:?string,raw:array<string,mixed>},
      *   raw_user: array<string,mixed>
      * }
      */
-    public function handleCallback(array $query, bool $clearPkce = true): array
+    public function handleCallback(array $query, bool $clearPkce = true, array $options = []): array
     {
-        $result = $this->client->handleCallback($query, $clearPkce);
+        $result = $this->client->handleCallback($query, $clearPkce, $options);
         return [
             'tokens' => $result->tokens->raw,
             'user' => [

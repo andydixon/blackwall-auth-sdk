@@ -6,6 +6,7 @@ namespace BlackWall\Auth\Tests;
 
 use BlackWall\Auth\AuthClient;
 use BlackWall\Auth\Config;
+use BlackWall\Auth\Exception\NonceMismatchException;
 use BlackWall\Auth\Exception\StateMismatchException;
 use BlackWall\Auth\Exception\TokenExchangeException;
 use BlackWall\Auth\Exception\UserInfoException;
@@ -47,14 +48,59 @@ final class AuthClientTest extends TestCase
         self::assertArrayHasKey('state', $result);
         self::assertArrayHasKey('code_verifier', $result);
         self::assertArrayHasKey('code_challenge', $result);
-        self::assertSame($result['state'], $_SESSION['blackwall_oauth_state']);
-        self::assertSame($result['code_verifier'], $_SESSION['blackwall_oauth_code_verifier']);
+        self::assertArrayHasKey('nonce', $result);
+        self::assertIsString($result['nonce']);
+        self::assertNotSame('', $result['nonce']);
+        self::assertSame($result['state'], $_SESSION[AuthClient::STATE_SESSION_KEY]);
+        self::assertSame($result['code_verifier'], $_SESSION[AuthClient::CODE_VERIFIER_SESSION_KEY]);
+        self::assertSame($result['nonce'], $_SESSION[AuthClient::NONCE_SESSION_KEY]);
         self::assertStringContainsString('code_challenge_method=S256', $result['url']);
+        self::assertStringContainsString('nonce=', $result['url']);
+    }
+
+    public function testBuildAuthorisationUrlDoesNotGenerateNonceWithoutOpenIdScope(): void
+    {
+        $result = $this->client->buildAuthorisationUrl([
+            'scope' => 'profile email',
+        ]);
+
+        self::assertNull($result['nonce']);
+        self::assertArrayNotHasKey(AuthClient::NONCE_SESSION_KEY, $_SESSION);
+        self::assertStringNotContainsString('nonce=', $result['url']);
+    }
+
+    public function testBuildAuthorisationUrlPersistsProvidedNonce(): void
+    {
+        $result = $this->client->buildAuthorisationUrl([
+            'nonce' => 'nonce-123',
+        ]);
+
+        self::assertSame('nonce-123', $result['nonce']);
+        self::assertSame('nonce-123', $_SESSION[AuthClient::NONCE_SESSION_KEY]);
+    }
+
+    public function testAssertNonceMatchesThrowsOnMismatch(): void
+    {
+        $_SESSION[AuthClient::NONCE_SESSION_KEY] = 'expected-nonce';
+
+        $this->expectException(NonceMismatchException::class);
+        $this->client->assertNonceMatches('actual-nonce');
+    }
+
+    public function testDecodeJwtPayloadClaimsReturnsClaimsWithoutVerification(): void
+    {
+        $claims = $this->client->decodeJwtPayloadClaims($this->makeJwt([
+            'sub' => 'user-1',
+            'nonce' => 'nonce-1',
+        ]));
+
+        self::assertSame('user-1', $claims['sub']);
+        self::assertSame('nonce-1', $claims['nonce']);
     }
 
     public function testAssertStateMatchesThrowsOnMismatch(): void
     {
-        $_SESSION['blackwall_oauth_state'] = 'expected';
+        $_SESSION[AuthClient::STATE_SESSION_KEY] = 'expected';
 
         $this->expectException(StateMismatchException::class);
         $this->client->assertStateMatches('actual');
@@ -62,7 +108,7 @@ final class AuthClientTest extends TestCase
 
     public function testExchangeCodeForTokensReturnsTypedTokenSet(): void
     {
-        $_SESSION['blackwall_oauth_code_verifier'] = 'verifier-123';
+        $_SESSION[AuthClient::CODE_VERIFIER_SESSION_KEY] = 'verifier-123';
 
         $this->http->queuePost([
             'status' => 200,
@@ -95,7 +141,7 @@ final class AuthClientTest extends TestCase
 
     public function testExchangeCodeForTokensThrowsOnEndpointError(): void
     {
-        $_SESSION['blackwall_oauth_code_verifier'] = 'verifier-123';
+        $_SESSION[AuthClient::CODE_VERIFIER_SESSION_KEY] = 'verifier-123';
 
         $this->http->queuePost([
             'status' => 400,
@@ -173,8 +219,66 @@ final class AuthClientTest extends TestCase
 
     public function testHandleCallbackReturnsCallbackResult(): void
     {
-        $_SESSION['blackwall_oauth_state'] = 'state-1';
-        $_SESSION['blackwall_oauth_code_verifier'] = 'verifier-123';
+        $_SESSION[AuthClient::STATE_SESSION_KEY] = 'state-1';
+        $_SESSION[AuthClient::CODE_VERIFIER_SESSION_KEY] = 'verifier-123';
+        $_SESSION[AuthClient::NONCE_SESSION_KEY] = 'nonce-1';
+
+        $this->http->queuePost([
+            'status' => 200,
+            'body' => json_encode([
+                'access_token' => 'access-1',
+                'refresh_token' => 'refresh-1',
+                'id_token' => $this->makeJwt(['nonce' => 'nonce-1', 'sub' => 'user-1']),
+                'token_type' => 'Bearer',
+            ], JSON_THROW_ON_ERROR),
+        ]);
+
+        $this->http->queueGet([
+            'status' => 200,
+            'body' => '{"email":"tutor@example.com","privilege_level":2}',
+        ]);
+
+        $result = $this->client->handleCallback([
+            'code' => 'code-1',
+            'state' => 'state-1',
+        ]);
+
+        self::assertSame('access-1', $result->tokens->accessToken);
+        self::assertSame('tutor@example.com', $result->user->email);
+        self::assertSame(2, $result->user->privilegeLevel);
+        self::assertArrayNotHasKey(AuthClient::STATE_SESSION_KEY, $_SESSION);
+        self::assertArrayNotHasKey(AuthClient::CODE_VERIFIER_SESSION_KEY, $_SESSION);
+        self::assertArrayNotHasKey(AuthClient::NONCE_SESSION_KEY, $_SESSION);
+    }
+
+    public function testHandleCallbackThrowsWhenIdTokenNonceDoesNotMatch(): void
+    {
+        $_SESSION[AuthClient::STATE_SESSION_KEY] = 'state-1';
+        $_SESSION[AuthClient::CODE_VERIFIER_SESSION_KEY] = 'verifier-123';
+        $_SESSION[AuthClient::NONCE_SESSION_KEY] = 'expected-nonce';
+
+        $this->http->queuePost([
+            'status' => 200,
+            'body' => json_encode([
+                'access_token' => 'access-1',
+                'refresh_token' => 'refresh-1',
+                'id_token' => $this->makeJwt(['nonce' => 'actual-nonce', 'sub' => 'user-1']),
+                'token_type' => 'Bearer',
+            ], JSON_THROW_ON_ERROR),
+        ]);
+
+        $this->expectException(NonceMismatchException::class);
+        $this->client->handleCallback([
+            'code' => 'code-1',
+            'state' => 'state-1',
+        ]);
+    }
+
+    public function testHandleCallbackSucceedsWhenNoIdTokenReturned(): void
+    {
+        $_SESSION[AuthClient::STATE_SESSION_KEY] = 'state-1';
+        $_SESSION[AuthClient::CODE_VERIFIER_SESSION_KEY] = 'verifier-123';
+        $_SESSION[AuthClient::NONCE_SESSION_KEY] = 'expected-nonce';
 
         $this->http->queuePost([
             'status' => 200,
@@ -196,15 +300,59 @@ final class AuthClientTest extends TestCase
         ]);
 
         self::assertSame('access-1', $result->tokens->accessToken);
-        self::assertSame('tutor@example.com', $result->user->email);
-        self::assertSame(2, $result->user->privilegeLevel);
-        self::assertArrayNotHasKey('blackwall_oauth_state', $_SESSION);
-        self::assertArrayNotHasKey('blackwall_oauth_code_verifier', $_SESSION);
+        self::assertNull($result->tokens->idToken);
+    }
+
+    public function testHandleCallbackCanDisableNonceValidationTemporarily(): void
+    {
+        $_SESSION[AuthClient::STATE_SESSION_KEY] = 'state-1';
+        $_SESSION[AuthClient::CODE_VERIFIER_SESSION_KEY] = 'verifier-123';
+        $_SESSION[AuthClient::NONCE_SESSION_KEY] = 'expected-nonce';
+
+        $this->http->queuePost([
+            'status' => 200,
+            'body' => json_encode([
+                'access_token' => 'access-1',
+                'refresh_token' => 'refresh-1',
+                'id_token' => $this->makeJwt(['nonce' => 'different-nonce', 'sub' => 'user-1']),
+                'token_type' => 'Bearer',
+            ], JSON_THROW_ON_ERROR),
+        ]);
+
+        $this->http->queueGet([
+            'status' => 200,
+            'body' => '{"email":"tutor@example.com","privilege_level":2}',
+        ]);
+
+        $result = $this->client->handleCallback([
+            'code' => 'code-1',
+            'state' => 'state-1',
+        ], true, [
+            'validate_nonce' => false,
+        ]);
+
+        self::assertSame('access-1', $result->tokens->accessToken);
     }
 
     public function testHandleCallbackThrowsOnMissingParams(): void
     {
         $this->expectException(UserInfoException::class);
         $this->client->handleCallback(['state' => 'only-state']);
+    }
+
+    /**
+     * @param array<string, mixed> $claims
+     */
+    private function makeJwt(array $claims): string
+    {
+        $header = $this->base64Url(json_encode(['alg' => 'none', 'typ' => 'JWT'], JSON_THROW_ON_ERROR));
+        $payload = $this->base64Url(json_encode($claims, JSON_THROW_ON_ERROR));
+
+        return $header . '.' . $payload . '.signature';
+    }
+
+    private function base64Url(string $value): string
+    {
+        return rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
     }
 }

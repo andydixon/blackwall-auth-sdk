@@ -30,6 +30,7 @@ $user = $client->getUserInfo($tokens->accessToken);
 - Token responses are strongly typed via `TokenSet`.
 - Errors are represented by specific exception classes.
 - HTTP transport is swappable via `HttpClientInterface`.
+- OIDC nonce handling is now first-class: `buildAuthorisationUrl()` returns `nonce`, persists it in session by default, and `handleCallback()` can validate it against the returned `id_token`.
 
 ## Compatibility status
 

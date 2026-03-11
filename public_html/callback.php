@@ -16,6 +16,8 @@ foreach ($autoloadCandidates as $file) {
 }
 
 use BlackWallSDK\BlackWallAuth;
+use BlackWall\Auth\AuthClient;
+use BlackWall\Auth\Exception\NonceMismatchException;
 use BlackWall\Auth\Exception\UserInfoException;
 
 $auth = new BlackWallAuth([
@@ -36,13 +38,18 @@ if (isset($_GET['error'])) {
 }
 
 try {
-    $result = $auth->handleCallback($_GET);
+    $result = $auth->handleCallback($_GET, true, [
+        'expected_nonce' => $_SESSION[AuthClient::NONCE_SESSION_KEY] ?? null,
+    ]);
     $_SESSION['access_token'] = $result['tokens']['access_token'] ?? null;
     $_SESSION['refresh_token'] = $result['tokens']['refresh_token'] ?? null;
     $_SESSION['user'] = $result['raw_user'] ?? null;
 
     header('Location: /');
     exit;
+} catch (NonceMismatchException $e) {
+    http_response_code(403);
+    echo 'Sign-in failed: the OpenID Connect nonce check did not pass. Please try signing in again.';
 } catch (UserInfoException $e) {
     http_response_code(403);
     echo 'User info access failed: ' . htmlspecialchars($e->getMessage(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');

@@ -9,7 +9,8 @@ This package provides:
 - UserInfo retrieval
 - UserInfo normalisation (`email`, `privilege_level`, `role`)
 - Unified callback handling helper (`handleCallback`)
-- Session helpers for `state` and `code_verifier`
+- First-class OIDC nonce generation, session persistence, and validation helpers
+- Session helpers for `state`, `code_verifier`, and `nonce`
 - Typed API (`AuthClient`, `TokenSet`) and specific exception classes
 
 ## Requirements
@@ -77,17 +78,12 @@ $config = Config::fromArray([
 $client = new AuthClient($config);
 
 // Step 1: redirect user to provider
-$auth = $client->buildAuthorisationUrl([
-    'extra' => [
-        // Include nonce in the authorisation request for OIDC.
-        'nonce' => rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '='),
-    ],
-]);
+$auth = $client->buildAuthorisationUrl();
 header('Location: ' . $auth['url']);
 exit;
 ```
 
-The generated authorisation request URL will include `nonce=...` alongside `state`, `scope`, and the PKCE parameters.
+When the requested scope includes `openid`, `buildAuthorisationUrl()` generates a URL-safe nonce automatically, stores it in `$_SESSION['blackwall_oidc_nonce']` when session persistence is enabled, and includes it in the authorisation request.
 
 For callback handling, see `docs/INTEGRATION_GUIDE.md`.
 For provider-side threat/invariant assumptions, see `docs/SECURITY_MODEL.md`.
@@ -95,7 +91,9 @@ For provider-side threat/invariant assumptions, see `docs/SECURITY_MODEL.md`.
 Minimal callback example:
 
 ```php
-$result = $client->handleCallback($_GET);
+$result = $client->handleCallback($_GET, true, [
+    'expected_nonce' => $_SESSION[\BlackWall\Auth\AuthClient::NONCE_SESSION_KEY] ?? null,
+]);
 
 $_SESSION['user'] = [
     'email' => $result->user->email,
@@ -104,6 +102,39 @@ $_SESSION['user'] = [
 ];
 $_SESSION['access_token'] = $result->tokens->accessToken;
 ```
+
+## OIDC nonce handling
+
+Use `nonce` for OpenID Connect authorisation requests. `state` protects the browser redirect flow against CSRF and mix-up issues. `nonce` binds the returned `id_token` to the login request that started in the user's session.
+
+The SDK now treats nonce as a first-class value:
+
+- `buildAuthorisationUrl()` generates a secure nonce automatically when the scope contains `openid`.
+- Pass `'nonce' => 'your-value'` if you need to supply your own nonce.
+- With default persistence enabled, the SDK stores:
+  - `$_SESSION['blackwall_oauth_state']`
+  - `$_SESSION['blackwall_oauth_code_verifier']`
+  - `$_SESSION['blackwall_oidc_nonce']`
+- The returned array from `buildAuthorisationUrl()` now includes `'nonce' => ?string`.
+- `assertNonceMatches()` checks a nonce against the stored session value.
+- `assertIdTokenNonceMatches()` decodes the JWT payload claims and validates the `nonce` claim against an explicit or session-backed expected nonce.
+- `handleCallback()` will validate nonce automatically when both of these are true:
+  - the token response contains an `id_token`
+  - an expected nonce is available explicitly or in session
+
+If the provider does not return an `id_token`, callback handling remains graceful and does not fail purely because a nonce was stored. If an `id_token` is returned but the `nonce` claim is missing or mismatched, the SDK throws `BlackWall\Auth\Exception\NonceMismatchException`.
+
+Compatibility mode: if you have a temporary deployment constraint and cannot enforce nonce immediately, call `handleCallback($_GET, true, ['validate_nonce' => false])`. Treat this as a short-lived compatibility setting only.
+
+### JWT payload decoding helper
+
+Use `decodeJwtPayloadClaims()` when you need to inspect an `id_token` payload:
+
+```php
+$claims = $client->decodeJwtPayloadClaims($result->tokens->idToken);
+```
+
+This helper only decodes the JWT payload. It does not verify the token signature, issuer, audience, expiry, or authorised token use. Nonce matching is still important, and complete ID token verification may require provider JWK handling and additional OIDC checks outside the current SDK scope.
 
 ## Backwards compatibility
 
@@ -147,7 +178,7 @@ This wrapper now delegates to `BlackWall\Auth\AuthClient`.
 - Do not submit parallel approve/reject/cancel decisions for the same approval request ID.
 - Apply bounded CSV import sizes and row counts for admin bulk-user operations.
 - Never place client secrets, refresh tokens, or access tokens in URL query strings.
-- For OIDC providers, include a per-request `nonce` in authorisation requests.
+- For OIDC providers, include a per-request `nonce` in authorisation requests and validate it when an `id_token` is returned.
 - Ensure requested `scope` values in SDK config/examples (for example `offline_access`) are enabled on the provider-side client before rollout.
 - Expect refresh-token exchange to fail (`invalid_grant`) if provider-side client scopes were tightened and the refresh token now carries disallowed scopes.
 - For direct Cryptbin API usage, send `key_b64url` on unwrap calls; provider rejects key-mismatch unwrap attempts with `403 Forbidden`.

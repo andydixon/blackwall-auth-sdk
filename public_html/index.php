@@ -16,6 +16,7 @@ foreach ($autoloadCandidates as $file) {
 }
 
 use BlackWallSDK\BlackWallAuth;
+use BlackWall\Auth\AuthClient;
 
 $auth = new BlackWallAuth([
     'clientId' => '94d228c4-d4c6-4479-9b02-793e6a73e3f2',
@@ -31,19 +32,16 @@ if (isset($_GET['logout'])) {
         $_SESSION['access_token'],
         $_SESSION['refresh_token'],
         $_SESSION['user'],
-        $_SESSION['blackwall_oauth_state'],
-        $_SESSION['blackwall_oauth_code_verifier']
+        $_SESSION[AuthClient::STATE_SESSION_KEY],
+        $_SESSION[AuthClient::CODE_VERIFIER_SESSION_KEY],
+        $_SESSION[AuthClient::NONCE_SESSION_KEY]
     );
     header('Location: /');
     exit;
 }
 
 if (!isset($_SESSION['user'])) {
-    $authData = $auth->getAuthorizationUrl([
-        'extra' => [
-            'nonce' => rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '='),
-        ],
-    ]);
+    $authData = $auth->getAuthorizationUrl();
     header('Location: ' . $authData['url']);
     exit;
 }
